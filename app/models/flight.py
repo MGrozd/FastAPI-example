@@ -4,8 +4,17 @@ from .aircraft import Aircraft
 
 
 class Flight(BaseModel):
-    departure_airport: str
-    arrival_airport: str
-    departure_datetime: datetime
-    arrival_datetime: datetime
-    assigned_aircraft: Aircraft
+    flight_number: str  # unique number of flight
+    departure_airport_code: str
+    arrival_airport_code: str
+    departure_datetime: str
+    arrival_datetime: str
+    assigned_aircraft: Aircraft = None
+
+
+class FlightsId(BaseModel):
+    flights_number: list[str] = []
+
+
+class FlightsInfo(BaseModel):
+    flights: list[Flight] = []
