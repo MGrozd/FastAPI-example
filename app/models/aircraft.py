@@ -6,3 +6,9 @@ class Aircraft(BaseModel):
     manufacturer: str
 
 
+class AircraftsId(BaseModel):
+    aircrafts_serial_number: list[str] = []
+
+
+class AircraftsInfo(BaseModel):
+    aircrafts: list[Aircraft] = []
