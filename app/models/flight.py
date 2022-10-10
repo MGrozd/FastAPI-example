@@ -18,3 +18,4 @@ class FlightsId(BaseModel):
 
 class FlightsInfo(BaseModel):
     flights: list[Flight] = []
+

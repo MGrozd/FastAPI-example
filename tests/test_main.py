@@ -231,3 +231,25 @@ def test_flight_searched_by_departure_time_range():
             'flight_number': '2'
         }]
     }
+
+
+def test_report():
+    response = client.get(
+        '/api/flight/report/departure_and_arrival_interval/2021-10-09-10:00_2024-10-09-12:00',
+        headers={"X-Token": "coneofsilence"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        'departure_airport_list': [
+            {
+                'aircrafts': [
+                    {
+                        'aircraft_id': '1',
+                        'average_flight_time_in_minutes': 60
+                    }
+                ],
+                'departure_airport_code': 'LDOS',
+                'number_of_flights': 1
+            }
+        ]
+    }

@@ -1,9 +1,11 @@
 from datetime import datetime
+import statistics
 
 from fastapi import FastAPI, Header, HTTPException
 
 from app.models.aircraft import Aircraft, AircraftsId, AircraftsInfo
 from app.models.flight import Flight, FlightsId, FlightsInfo
+from app.models.report import FlightsReport, AirportReport, AircraftReport
 
 secret_token = "coneofsilence"
 
@@ -30,7 +32,6 @@ flight_db = {
 }
 
 app = FastAPI()
-# TODO: add to db
 
 
 def check_token(token: str):
@@ -127,6 +128,7 @@ async def update_flight(flights_info: FlightsInfo, x_token: str = Header()):
     flights_info.flights = flights_info_list
     return flights_info
 
+
 @app.delete('/api/flight/delete')
 async def delete_flight(flights_id: FlightsId, x_token: str = Header()):
     check_token(x_token)
@@ -178,3 +180,60 @@ async def search_by_departure_time_range(searched_departure_time_range: str, x_t
             flights_info_list.append(flight_db[flight_number])
     flights_info.flights = flights_info_list
     return flights_info
+
+
+@app.get(
+    '/api/flight/report/departure_and_arrival_interval/{departure_and_arrival_interval}',
+    response_model=FlightsReport
+)
+async def report(departure_and_arrival_interval: str, x_token: str = Header()):
+    check_token(x_token)
+    interval = departure_and_arrival_interval.split('_')
+    interval_start = datetime.strptime(interval[0], "%Y-%m-%d-%H:%M")
+    interval_end = datetime.strptime(interval[-1], "%Y-%m-%d-%H:%M")
+    aircraft_flight_time = {}
+    airport_flights_number = {}
+    airport_aircraft = {}
+    for flight_number in flight_db:
+        departure_time = datetime.strptime(flight_db[flight_number].departure_datetime, "%Y-%m-%d %H:%M")
+        arrival_time = datetime.strptime(flight_db[flight_number].arrival_datetime, "%Y-%m-%d %H:%M")
+        in_flight_time = arrival_time - departure_time
+        in_flight_time_minutes = int(in_flight_time.seconds / 60)
+        if interval_start <= departure_time <= arrival_time <= interval_end:
+            airport_id = flight_db[flight_number].departure_airport_code
+            aircraft_id = flight_db[flight_number].assigned_aircraft.serial_number
+
+            if airport_id in airport_aircraft:
+                if aircraft_id in aircraft_flight_time:
+                    aircraft_flight_time[aircraft_id].append(in_flight_time_minutes)
+                else:
+                    aircraft_flight_time[aircraft_id] = [in_flight_time_minutes]
+                airport_aircraft[airport_id] = aircraft_flight_time
+            else:
+                aircraft_flight_time[aircraft_id] = [in_flight_time_minutes]
+                airport_aircraft[airport_id] = aircraft_flight_time
+
+            if airport_id in airport_flights_number:
+                airport_flights_number[airport_id] += 1
+            else:
+                airport_flights_number[airport_id] = 1
+
+    flights_report = FlightsReport()
+    airport_list = []
+
+    for airport_id in airport_aircraft:
+        aircraft_list = []
+        for aircraft_id in aircraft_flight_time:
+            aircraft_report = AircraftReport()
+            aircraft_report.aircraft_id = aircraft_id
+            aircraft_report.average_flight_time_in_minutes = int(statistics.mean(aircraft_flight_time[aircraft_id]))
+            aircraft_list.append(aircraft_report)
+
+        airport_report = AirportReport()
+        airport_report.departure_airport_code = airport_id
+        airport_report.number_of_flights = airport_flights_number[airport_id]
+        airport_report.aircrafts = aircraft_list
+        airport_list.append(airport_report)
+
+    flights_report.departure_airport_list = airport_list
+    return flights_report

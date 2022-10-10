@@ -4,7 +4,7 @@ services:
     fastapi:
         build:
             context: .
-            dockerfile: docker/Dockerfile-django
+            dockerfile: docker/Dockerfile-fastapi
         volumes:
             - "."
         environment:
@@ -12,4 +12,4 @@ services:
             - PYTHONPYCACHEPREFIX=../__pycache__
         ports:
             - "8000:8000"
-        command: python main.py runserver 0.0.0.0:8000
+        command: uvicorn main:app --reload
