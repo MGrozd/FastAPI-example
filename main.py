@@ -115,6 +115,7 @@ async def flights_info(flights_id: FlightsId, x_token: str = Header()):
     flights_info.flights = flights_info_list
     return flights_info
 
+
 @app.patch('/api/flight/update', response_model=FlightsInfo)
 async def update_flight(flights_info: FlightsInfo, x_token: str = Header()):
     check_token(x_token)
@@ -134,3 +135,46 @@ async def delete_flight(flights_id: FlightsId, x_token: str = Header()):
             del flight_db[flight_number]
     return flight_db
 
+
+@app.get('/api/flight/search/departure_airport/{searched_departure_airport_code}', response_model=FlightsInfo)
+async def search_by_departure_airport(searched_departure_airport_code: str, x_token: str = Header()):
+    check_token(x_token)
+    flights_info = FlightsInfo()
+    flights_info_list = []
+    for flight_number in flight_db:
+        if flight_db[flight_number].departure_airport_code == searched_departure_airport_code.upper():
+            flights_info_list.append(flight_db[flight_number])
+    flights_info.flights = flights_info_list
+    if not flights_info_list:
+        raise HTTPException(status_code=404, detail=f'{searched_departure_airport_code} does not exists!')
+    return flights_info
+
+
+@app.get('/api/flight/search/arrival_airport/{searched_arrival_airport_code}', response_model=FlightsInfo)
+async def search_by_arrival_airport(searched_arrival_airport_code: str, x_token: str = Header()):
+    check_token(x_token)
+    flights_info = FlightsInfo()
+    flights_info_list = []
+    for flight_number in flight_db:
+        if flight_db[flight_number].arrival_airport_code == searched_arrival_airport_code.upper():
+            flights_info_list.append(flight_db[flight_number])
+    flights_info.flights = flights_info_list
+    if not flights_info_list:
+        raise HTTPException(status_code=404, detail=f'{searched_arrival_airport_code} does not exists!')
+    return flights_info
+
+
+@app.get('/api/flight/search/departure_time_range/{searched_departure_time_range}', response_model=FlightsInfo)
+async def search_by_departure_time_range(searched_departure_time_range: str, x_token: str = Header()):
+    check_token(x_token)
+    flights_info = FlightsInfo()
+    flights_info_list = []
+    departure_time_range = searched_departure_time_range.split('_')
+    departure_time_range_start = datetime.strptime(departure_time_range[0], "%Y-%m-%d-%H:%M")
+    departure_time_range_end = datetime.strptime(departure_time_range[-1], "%Y-%m-%d-%H:%M")
+    for flight_number in flight_db:
+        departure_time = datetime.strptime(flight_db[flight_number].departure_datetime, "%Y-%m-%d %H:%M")
+        if departure_time_range_start <= departure_time <= departure_time_range_end:
+            flights_info_list.append(flight_db[flight_number])
+    flights_info.flights = flights_info_list
+    return flights_info

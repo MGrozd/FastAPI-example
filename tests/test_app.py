@@ -33,6 +33,7 @@ def test_read_aircraft():
         "manufacturer": "Boing",
     }
 
+
 def test_read_aircrafts_info():
     response = client.post(
         "/api/aircraft/read",
@@ -45,6 +46,7 @@ def test_read_aircrafts_info():
         {"serial_number": "2", "manufacturer": "Airbus"}]
     }
 
+
 def test_update_aircraft():
     response = client.patch(
         "/api/aircraft/update",
@@ -55,6 +57,7 @@ def test_update_aircraft():
     assert response.json() == {
         'aircrafts': [{'manufacturer': 'Lockheed Martin', 'serial_number': '1'}]
     }
+
 
 def test_delete_aircraft():
     response = client.delete(
@@ -95,6 +98,7 @@ def test_create_flight():
     )
     assert response.status_code == 200
 
+
 def test_read_flights_info():
     response = client.post(
         "/api/flight/read",
@@ -122,6 +126,7 @@ def test_read_flights_info():
             }
         ]
     }
+
 
 def test_update_flight():
     response = client.patch(
@@ -154,6 +159,7 @@ def test_update_flight():
         ]
     }
 
+
 def test_delete_flight():
     response = client.delete(
         "/api/flight/delete",
@@ -170,4 +176,58 @@ def test_delete_flight():
             'departure_datetime': '2023-10-09 10:00',
             'flight_number': '2'
         }
+    }
+
+
+def test_flight_searched_by_departure_airport():
+    response = client.get(
+        "/api/flight/search/departure_airport/LDOS",
+        headers={"X-Token": "coneofsilence"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        'flights': [{
+            'arrival_airport_code': 'LDZA',
+            'arrival_datetime': '2023-10-09 11:00',
+            'assigned_aircraft': {'manufacturer': 'Boing', 'serial_number': '1'},
+            'departure_airport_code': 'LDOS',
+            'departure_datetime': '2023-10-09 10:00',
+            'flight_number': '2'
+        }]
+    }
+
+
+def test_flight_searched_by_arrival_airport():
+    response = client.get(
+        "/api/flight/search/arrival_airport/LDZA",
+        headers={"X-Token": "coneofsilence"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        'flights': [{
+            'arrival_airport_code': 'LDZA',
+            'arrival_datetime': '2023-10-09 11:00',
+            'assigned_aircraft': {'manufacturer': 'Boing', 'serial_number': '1'},
+            'departure_airport_code': 'LDOS',
+            'departure_datetime': '2023-10-09 10:00',
+            'flight_number': '2'
+        }]
+    }
+
+
+def test_flight_searched_by_departure_time_range():
+    response = client.get(
+        "/api/flight/search/departure_time_range/2023-10-09-10:00_2023-10-09-12:00",
+        headers={"X-Token": "coneofsilence"}
+    )
+    assert response.status_code == 200
+    assert response.json() == {
+        'flights': [{
+            'arrival_airport_code': 'LDZA',
+            'arrival_datetime': '2023-10-09 11:00',
+            'assigned_aircraft': {'manufacturer': 'Boing', 'serial_number': '1'},
+            'departure_airport_code': 'LDOS',
+            'departure_datetime': '2023-10-09 10:00',
+            'flight_number': '2'
+        }]
     }
